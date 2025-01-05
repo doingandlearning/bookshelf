@@ -9,6 +9,7 @@
           <span class="switch-label">{{ isShelfView ? 'Shelf View' : 'List View' }}</span>
         </label>
         <button @click="openAddModal" class="add-button">Add Book</button>
+        <button @click="exportToCsv" class="button">Export to CSV</button>
       </div>
     </div>
 
@@ -102,6 +103,41 @@ const closeBookView = () => {
   showBookView.value = false;
   selectedBook.value = null;
 };
+
+async function exportToCsv() {
+  // Get all books from the database
+  const allBooks = await db.books.toArray();
+
+  // Create CSV header
+  const headers = ['Title', 'Author', 'Date Finished', 'Genre', 'Pages', 'Cover URL'];
+
+  // Convert books to CSV rows
+  const rows = allBooks.map(book => [
+    book.title,
+    book.author,
+    book.dateFinished,
+    book.genre,
+    book.pages,
+    book.coverUrl
+  ].map(value => `"${value}"`).join(','));
+
+  // Combine headers and rows
+  const csvContent = [headers.join(','), ...rows].join('\n');
+
+  // Create blob and download link
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', 'bookshelf-export.csv');
+
+  // Trigger download
+  document.body.appendChild(link);
+  link.click();
+
+  // Cleanup
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
 </script>
 
 <style scoped>
